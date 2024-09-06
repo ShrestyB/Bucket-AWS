@@ -1,0 +1,17 @@
+Parameters:
+  paramTagValue: # declare paramTagValue as a parameter
+    Description: Value of tag for EC2 instance
+    Type: String
+  paramKeyName: # declare paramKeyName as a parameter
+    Description: Name of an existing EC2 KeyPair to enable SSH access into the server
+    Type: 'AWS::EC2::KeyPair::KeyName'
+Resources:
+  myEc2Instance: # Logical ID
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-5b41123e
+      Tags:
+        - Key: Agilelab
+          Value: !Ref paramTagValue # ref to Parameters
+      KeyName: !Ref paramKeyName # ref to Parameters

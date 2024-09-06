@@ -1,0 +1,61 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an EC2 instance, Elastic IP, Security Group, and EBS volume, and output Public and Private IP addresses.
+
+Resources:
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow SSH and HTTP access'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'
+
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-5b41123e  # Replace with the desired AMI ID
+      #KeyName: your-key-pair           # Replace with your key pair name
+      SecurityGroups:
+        - !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: MyEC2Instance
+
+  MyElasticIP:
+    Type: 'AWS::EC2::EIP'
+
+  EIPAssociation:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      InstanceId: !Ref MyEC2Instance
+      EIP: !Ref MyElasticIP
+
+  MyEBSVolume:
+    Type: 'AWS::EC2::Volume'
+    Properties:
+      AvailabilityZone: !GetAtt MyEC2Instance.AvailabilityZone
+      Size: 8  # Size in GB
+
+  VolumeAttachment:
+    Type: 'AWS::EC2::VolumeAttachment'
+    Properties:
+      InstanceId: !Ref MyEC2Instance
+      VolumeId: !Ref MyEBSVolume
+      Device: /dev/sdh
+
+Outputs:
+  PublicIP:
+    Description: 'Public IP address of the EC2 instance'
+    Value: !Ref MyElasticIP
+
+  PrivateIP:
+    Description: 'Private IP address of the EC2 instance'
+    Value: !GetAtt MyEC2Instance.PrivateIp

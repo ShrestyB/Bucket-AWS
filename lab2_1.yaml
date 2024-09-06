@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an EC2 instance and output Public and Private IP addresses.
+
+Resources:
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-5b41123e  # Replace with the desired AMI ID
+      #KeyName: your-key-pair           # Replace with your key pair name
+      Tags:
+        - Key: Agilelab
+          Value: MyEC2Instance
+
+Outputs:
+  PublicIP:
+    Description: 'Public IP address of the EC2 instance'
+    Value: !GetAtt MyEC2Instance.PublicIp
+
+  PrivateIP:
+    Description: 'Private IP address of the EC2 instance'
+    Value: !GetAtt MyEC2Instance.PrivateIp
