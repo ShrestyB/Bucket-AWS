@@ -1,0 +1,54 @@
+Parameters:
+  InstanceType:
+    Description: 'EC2 instance type'
+    Type: String
+    Default: 't2.micro'
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+    ConstraintDescription: 'Must be a valid EC2 instance type.'
+
+  KeyName:
+    Description: 'The name of the key pair to allow SSH access to the EC2 instance'
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: 'Must be the name of an existing EC2 KeyPair.'
+
+  TagValue:
+    Description: 'Value for the Name tag of the EC2 instance'
+    Type: String
+    Default: 'shrestyEC2'
+
+Mappings:
+  RegionMap:
+    
+    us-east-1:
+      AMI: 'ami-066784287e358dad1'
+
+Resources:
+  shrestyEC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      Tags:
+        - Key: 'Name'
+          Value: !Ref TagValue
+
+Outputs:
+  InstanceId:
+    Description: 'Instance ID of the newly created EC2 instance'
+    Value: !Ref shrestyEC2
+
+  AvailabilityZone:
+    Description: 'Availability Zone of the newly created EC2 instance'
+    Value: !GetAtt shrestyEC2.AvailabilityZone
+
+  PublicDnsName:
+    Description: 'Public DNS name of the newly created EC2 instance'
+    Value: !GetAtt shrestyEC2.PublicDnsName
+
+  PublicIp:
+    Description: 'Public IP address of the EC2 instance'
+    Value: !GetAtt shrestyEC2.PublicIp

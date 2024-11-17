@@ -1,0 +1,8 @@
+Resources:
+  MyS3Bucket:
+    Type: 'AWS::S3::Bucket' 
+    Properties:
+      BucketName: shresty-bohra-bucket
+      Tags: # list of tags
+        - Key: Agilelab
+          Value: shresty

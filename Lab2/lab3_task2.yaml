@@ -1,0 +1,201 @@
+Parameters:
+  paramVpcCIDR:
+    Description: Enter the IP range (CIDR notation) for VPC
+    Type: String
+    Default: 10.192.0.0/16
+  paramUniqueName:
+    Description: Unique name for tagging
+    Type: String
+    Default: MyUniqueName
+  paramPublicSubnet1CIDR:
+    Description: Enter the IP range (CIDR notation) for the public subnet in AZ A
+    Type: String
+    Default: 10.192.10.0/24
+  paramPublicSubnet2CIDR:
+    Description: Enter the IP range (CIDR notation) for the public subnet in AZ B
+    Type: String
+    Default: 10.192.11.0/24
+  paramPrivateSubnet1CIDR:
+    Description: Enter the IP range (CIDR notation) for the private subnet in AZ A
+    Type: String
+    Default: 10.192.20.0/24
+  paramPrivateSubnet2CIDR:
+    Description: Enter the IP range (CIDR notation) for the private subnet in AZ B
+    Type: String
+    Default: 10.192.21.0/24
+
+Resources:
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref paramVpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: CloudFormationLab
+          Value: !Ref paramUniqueName
+
+  myInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: CloudFormationLab
+          Value: !Ref paramUniqueName
+
+  myVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref myVPC
+      InternetGatewayId: !Ref myInternetGateway
+
+  myPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: myVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref myPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref myInternetGateway
+
+  myPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ] # AZ 1
+      CidrBlock: !Ref paramPublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ] # AZ 2
+      CidrBlock: !Ref paramPublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref myPublicRouteTable
+      SubnetId: !Ref myPublicSubnet1
+
+  myPublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref myPublicRouteTable
+      SubnetId: !Ref myPublicSubnet2
+
+  myEIPforNatGateway1:
+    Type: AWS::EC2::EIP
+    DependsOn: myVPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  myEIPforNatGateway2:
+    Type: AWS::EC2::EIP
+    DependsOn: myVPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  myNatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt myEIPforNatGateway1.AllocationId
+      SubnetId: !Ref myPublicSubnet1
+
+  myNatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt myEIPforNatGateway2.AllocationId
+      SubnetId: !Ref myPublicSubnet2
+
+  myPrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPrivateRouteForAz1:
+    Type: AWS::EC2::Route
+    DependsOn: myVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref myPrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref myNatGateway1
+
+  myPrivateRouteForAz2:
+    Type: AWS::EC2::Route
+    DependsOn: myVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref myPrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref myNatGateway2
+
+  myPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ] # AZ 1
+      CidrBlock: !Ref paramPrivateSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ] # AZ 2
+      CidrBlock: !Ref paramPrivateSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Ref paramUniqueName
+
+  myPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref myPrivateRouteTable1
+      SubnetId: !Ref myPrivateSubnet1
+
+  myPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref myPrivateRouteTable2
+      SubnetId: !Ref myPrivateSubnet2
+
+
+Outputs:
+  outputVPC:
+    Description: A reference to the created VPC
+    Value: !Ref myVPC
+  outputPublicSubnets:
+    Description: A list of the public subnets
+    Value: !Join [ ",", [ !Ref myPublicSubnet1, !Ref myPublicSubnet2 ]]
+  outputPrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref myPrivateSubnet1, !Ref myPrivateSubnet2 ]]

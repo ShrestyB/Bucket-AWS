@@ -1,0 +1,74 @@
+Description: CloudFormation Template to create an EC2 Instance with Parameters, Mappings, and Outputs for InstanceId, AvailabilityZone, PublicDnsName, and PublicIp.
+
+Parameters:
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+
+  AmiId:
+    Description: AMI ID for the EC2 instance
+    Type: String
+    Default: ami-5b41123e  # Replace with an appropriate default AMI ID for your region
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      "AMI": ami-5b41123e
+    us-west-2:
+      "AMI": ami-094be4c7f1e506a7a
+    eu-west-1:
+      "AMI": ami-0710bb577045071ff
+
+Resources:
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !FindInMap 
+        - RegionMap
+        - !Ref "AWS::Region"
+        - AMI
+      SecurityGroups:
+        - !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: MyEC2Instance
+
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow SSH and HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'
+
+Outputs:
+  InstanceId:
+    Description: The Instance ID of the EC2 instance
+    Value: !Ref MyEC2Instance
+
+  AvailabilityZone:
+    Description: The Availability Zone where the EC2 instance is launched
+    Value: !GetAtt MyEC2Instance.AvailabilityZone
+
+  PublicDnsName:
+    Description: The Public DNS Name of the EC2 instance
+    Value: !GetAtt MyEC2Instance.PublicDnsName
+
+  PublicIp:
+    Description: The Public IP address of the EC2 instance
+    Value: !GetAtt MyEC2Instance.PublicIp
+
+
